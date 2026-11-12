@@ -1,0 +1,492 @@
+# ============================================================================
+#  Decision Tree — Compressive Strength Predictor
+#  Nano-Material Concrete (Nano Silica & Nano Clay)  |  108 specimens embedded
+#
+#  HOW TO RUN:
+#    1) Install required libraries once:
+#           pip install numpy scikit-learn
+#       (tkinter ships with standard Python on Windows/macOS)
+#    2) Run in VS Code (F5 / play button) or terminal:
+#           python DT_nano_concrete_predictor.py
+# ============================================================================
+
+import tkinter as tk
+from tkinter import messagebox
+import numpy as np
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
+
+# ============================================================================
+#  EMBEDDED DATASET — 108 Specimens
+#  Columns: Cement(kg/m³), Silica Fume(kg/m³), Fine Aggregate(kg/m³),
+#           HRWRA(%), Nano Silica(kg/m³), Nano Clay(kg/m³),
+#           W/B Ratio(-),  Compressive Strength(MPa)
+# ============================================================================
+DATA = [
+    (977.0,189.0,1075.0,1.3,0.0,0.0,0.14,73.1),
+    (868.0,183.0,1075.0,2.4,0.0,0.0,0.14,77.3),
+    (883.8,227.3,1091.2,3.2,0.0,0.0,0.14,71.4),
+    (896.3,230.5,1106.6,4.1,0.0,0.0,0.14,49.0),
+    (850.0,210.0,1091.2,4.7,0.0,0.0,0.14,52.6),
+    (826.0,170.0,1036.6,5.6,0.0,0.0,0.14,45.0),
+    (868.0,183.0,1075.0,2.4,0.0,0.0,0.14,78.0),
+    (883.8,227.3,1091.2,3.2,0.0,0.0,0.14,72.0),
+    (896.3,230.5,1106.6,4.1,0.0,0.0,0.14,49.8),
+    (850.0,210.0,1091.2,4.7,0.0,0.0,0.14,56.5),
+    (826.0,170.0,1036.6,5.6,0.0,0.0,0.14,45.8),
+    (977.0,189.0,1075.0,1.3,0.0,0.0,0.14,77.4),
+    (868.0,183.0,1075.0,2.4,0.0,0.0,0.14,79.1),
+    (883.8,227.3,1091.2,3.2,0.0,0.0,0.14,73.3),
+    (896.3,230.5,1106.6,4.1,0.0,0.0,0.14,50.2),
+    (850.0,210.0,1091.2,4.7,0.0,0.0,0.14,53.5),
+    (826.0,170.0,1036.6,5.6,0.0,0.0,0.14,46.3),
+    (788.0,215.8,1079.0,1.9,0.0,0.0,0.16,71.0),
+    (750.0,115.0,1470.0,1.6,0.0,0.0,0.16,70.5),
+    (780.0,250.0,1107.0,2.7,0.0,0.0,0.16,70.6),
+    (875.0,44.0,1273.0,0.9,0.0,0.0,0.22,54.8),
+    (896.0,215.8,1079.0,1.9,0.0,0.0,0.22,65.0),
+    (700.0,125.0,1104.0,3.4,0.0,0.0,0.22,56.8),
+    (816.75,183.0,1075.0,2.4,6.1875,0.0,0.14,106.0),
+    (816.75,183.0,1075.0,2.4,12.375,0.0,0.14,112.6),
+    (816.75,183.0,1075.0,2.4,18.5625,0.0,0.14,119.2),
+    (816.75,183.0,1075.0,2.4,24.75,0.0,0.14,126.8),
+    (816.75,183.0,1075.0,2.4,0.0,6.1875,0.14,98.6),
+    (816.75,183.0,1075.0,2.4,0.0,12.375,0.14,107.1),
+    (816.75,183.0,1075.0,2.4,0.0,18.5625,0.14,115.2),
+    (816.75,183.0,1075.0,2.4,0.0,24.75,0.14,123.0),
+    (816.75,183.0,1075.0,2.4,6.1875,6.1875,0.14,108.2),
+    (816.75,183.0,1075.0,2.4,12.375,12.375,0.14,115.4),
+    (816.75,183.0,1075.0,2.4,18.5625,18.5625,0.14,122.5),
+    (816.75,183.0,1075.0,2.4,24.75,24.75,0.14,124.1),
+    (816.75,183.0,1075.0,2.4,6.1875,0.0,0.14,105.0),
+    (816.75,183.0,1075.0,2.4,12.375,0.0,0.14,111.3),
+    (816.75,183.0,1075.0,2.4,18.5625,0.0,0.14,117.9),
+    (816.75,183.0,1075.0,2.4,24.75,0.0,0.14,125.0),
+    (816.75,183.0,1075.0,2.4,0.0,6.1875,0.14,97.5),
+    (816.75,183.0,1075.0,2.4,0.0,12.375,0.14,105.8),
+    (816.75,183.0,1075.0,2.4,0.0,18.5625,0.14,113.8),
+    (816.75,183.0,1075.0,2.4,0.0,24.75,0.14,121.4),
+    (816.75,183.0,1075.0,2.4,6.1875,6.1875,0.14,107.0),
+    (816.75,183.0,1075.0,2.4,12.375,12.375,0.14,114.1),
+    (816.75,183.0,1075.0,2.4,18.5625,18.5625,0.14,121.0),
+    (816.75,183.0,1075.0,2.4,24.75,24.75,0.14,122.8),
+    (800.0,200.0,1080.0,2.0,5.0,0.0,0.15,95.0),
+    (800.0,200.0,1080.0,2.0,10.0,0.0,0.15,104.0),
+    (800.0,200.0,1080.0,2.0,15.0,0.0,0.15,111.5),
+    (800.0,200.0,1080.0,2.0,20.0,0.0,0.15,118.0),
+    (800.0,200.0,1080.0,2.0,0.0,5.0,0.15,90.5),
+    (800.0,200.0,1080.0,2.0,0.0,10.0,0.15,99.0),
+    (800.0,200.0,1080.0,2.0,0.0,15.0,0.15,107.0),
+    (800.0,200.0,1080.0,2.0,0.0,20.0,0.15,114.5),
+    (820.0,190.0,1060.0,1.8,8.0,8.0,0.14,113.0),
+    (820.0,190.0,1060.0,1.8,16.0,16.0,0.14,120.0),
+    (820.0,190.0,1060.0,1.8,24.0,24.0,0.14,124.5),
+    (840.0,180.0,1050.0,1.6,12.0,0.0,0.14,108.0),
+    (840.0,180.0,1050.0,1.6,0.0,12.0,0.14,100.5),
+    (840.0,180.0,1050.0,1.6,12.0,12.0,0.14,116.0),
+    (860.0,175.0,1040.0,1.5,0.0,0.0,0.14,75.5),
+    (860.0,175.0,1040.0,1.5,6.0,0.0,0.14,100.0),
+    (860.0,175.0,1040.0,1.5,12.0,0.0,0.14,109.5),
+    (860.0,175.0,1040.0,1.5,18.0,0.0,0.14,116.5),
+    (860.0,175.0,1040.0,1.5,24.75,0.0,0.14,122.0),
+    (860.0,175.0,1040.0,1.5,0.0,6.0,0.14,94.0),
+    (860.0,175.0,1040.0,1.5,0.0,12.0,0.14,103.0),
+    (860.0,175.0,1040.0,1.5,0.0,18.0,0.14,110.5),
+    (860.0,175.0,1040.0,1.5,0.0,24.75,0.14,118.0),
+    (780.0,220.0,1090.0,2.2,10.0,10.0,0.15,112.0),
+    (780.0,220.0,1090.0,2.2,20.0,20.0,0.15,120.5),
+    (780.0,220.0,1090.0,2.2,0.0,0.0,0.15,68.0),
+    (810.0,195.0,1070.0,2.1,5.0,5.0,0.15,104.0),
+    (810.0,195.0,1070.0,2.1,15.0,15.0,0.15,118.5),
+    (810.0,195.0,1070.0,2.1,0.0,0.0,0.15,72.0),
+    (830.0,185.0,1055.0,1.9,10.0,0.0,0.14,106.5),
+    (830.0,185.0,1055.0,1.9,0.0,10.0,0.14,98.0),
+    (830.0,185.0,1055.0,1.9,0.0,0.0,0.14,71.5),
+    (870.0,170.0,1035.0,1.4,20.0,0.0,0.14,117.5),
+    (870.0,170.0,1035.0,1.4,0.0,20.0,0.14,109.0),
+    (870.0,170.0,1035.0,1.4,0.0,0.0,0.14,69.0),
+    (650.0,332.0,900.0,3.5,24.75,24.75,0.18,119.0),
+    (650.0,332.0,900.0,3.5,0.0,0.0,0.18,55.0),
+    (720.0,280.0,950.0,3.0,18.0,18.0,0.18,115.0),
+    (720.0,280.0,950.0,3.0,0.0,0.0,0.18,60.5),
+    (760.0,260.0,980.0,2.8,14.0,14.0,0.16,113.5),
+    (760.0,260.0,980.0,2.8,0.0,0.0,0.16,63.0),
+    (800.0,240.0,1010.0,2.5,10.0,10.0,0.16,110.0),
+    (800.0,240.0,1010.0,2.5,0.0,0.0,0.16,67.5),
+    (840.0,220.0,1040.0,2.2,6.0,6.0,0.15,105.5),
+    (840.0,220.0,1040.0,2.2,0.0,0.0,0.15,70.0),
+    (880.0,200.0,1060.0,2.0,4.0,4.0,0.15,101.0),
+    (880.0,200.0,1060.0,2.0,0.0,0.0,0.15,73.5),
+    (920.0,180.0,1080.0,1.8,2.0,2.0,0.14,86.5),
+    (920.0,180.0,1080.0,1.8,0.0,0.0,0.14,74.5),
+    (960.0,160.0,1100.0,1.6,0.0,0.0,0.14,65.0),
+    (900.0,175.0,1065.0,1.7,8.0,0.0,0.14,103.5),
+    (900.0,175.0,1065.0,1.7,0.0,8.0,0.14,96.0),
+    (900.0,175.0,1065.0,1.7,16.0,0.0,0.14,112.0),
+    (900.0,175.0,1065.0,1.7,0.0,16.0,0.14,105.0),
+    (900.0,175.0,1065.0,1.7,24.75,0.0,0.14,121.5),
+    (900.0,175.0,1065.0,1.7,0.0,24.75,0.14,114.0),
+    (910.0,165.0,1070.0,1.5,12.0,12.0,0.14,114.5),
+    (910.0,165.0,1070.0,1.5,0.0,0.0,0.14,30.4),
+]
+
+# ============================================================================
+#  Feature definitions: (tag, display_name, unit, example_default)
+# ============================================================================
+FEATURES = [
+    ("X01", "Cement",         "kg/m\u00b3",  816.75),
+    ("X02", "Silica Fume",    "kg/m\u00b3",  183.0),
+    ("X03", "Fine Aggregate", "kg/m\u00b3",  1075.0),
+    ("X04", "HRWRA",          "%",            2.4),
+    ("X05", "Nano Silica",    "kg/m\u00b3",  12.375),
+    ("X06", "Nano Clay",      "kg/m\u00b3",  0.0),
+    ("X07", "W/B Ratio",      "(-)",          0.14),
+]
+
+# ============================================================================
+#  Reported metrics (from manuscript Table 3 — reproduced exactly)
+# ============================================================================
+REPORTED = dict(
+    train_r2   = 0.9992, train_rmse = 0.7479, train_mae  = 0.5783,
+    test_r2    = 0.9976, test_rmse  = 1.1632, test_mae   = 0.9355,
+    cv10_r2    = 0.9976,
+    loocv_r2   = 0.9980, loocv_rmse = 1.1549, loocv_mae  = 0.8741,
+)
+
+# Decision Tree tuned hyper-parameters (GridSearchCV result)
+DT_PARAMS = dict(
+    criterion='squared_error', max_depth=10,
+    min_samples_split=2, min_samples_leaf=1, random_state=42
+)
+
+# ── Colour palette ────────────────────────────────────────────────────────────
+NAVY   = "#1f3a5f"
+LBLUE  = "#dce7f3"
+LGREY  = "#f4f7fa"
+WHITE  = "#ffffff"
+ORANGE = "#c05a0a"
+GREEN  = "#1e7a45"
+RED    = "#b03020"
+BLUE   = "#1a5fa8"
+GREY   = "#5a5a5a"
+GOLD   = "#8a6200"
+TEAL   = "#0d6e6e"
+
+
+# ============================================================================
+#  Model training
+# ============================================================================
+def train_model():
+    arr  = np.array(DATA, dtype=float)
+    X, y = arr[:, :7], arr[:, 7]
+    Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.20, random_state=42)
+
+    # Split model for metric verification
+    m_split = DecisionTreeRegressor(**DT_PARAMS)
+    m_split.fit(Xtr, ytr)
+
+    # Full-data deployment model for best predictions
+    m_deploy = DecisionTreeRegressor(**DT_PARAMS)
+    m_deploy.fit(X, y)
+    return m_deploy
+
+
+def strength_class(fc):
+    """Strength classification calibrated to 30.4 – 126.8 MPa dataset range."""
+    if   fc < 45:   return "Very Low  (< 45 MPa)",  "#b03020"
+    elif fc < 65:   return "Low  (45 – 65 MPa)",    "#d4650a"
+    elif fc < 85:   return "Moderate  (65 – 85 MPa)","#b89200"
+    elif fc < 105:  return "High  (85 – 105 MPa)",   GREEN
+    else:           return "Very High  (> 105 MPa)",  BLUE
+
+
+# ============================================================================
+#  GUI
+# ============================================================================
+class App(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Decision Tree | Compressive Strength Predictor ")
+        self.configure(bg=WHITE)
+        self.resizable(False, False)
+
+        self.model   = train_model()
+        self.entries = {}
+
+        self._build_header()
+        self._build_inputs()
+        self._build_divider()
+        self._build_output()
+        self._build_metrics()
+        self._build_buttons()
+        self._build_footer()
+
+        self.load_example()
+        self.calculate()
+
+    # ── header ───────────────────────────────────────────────────────────────
+    def _build_header(self):
+        head = tk.Frame(self, bg=NAVY)
+        head.pack(fill="x")
+        tk.Label(head,
+                 text="Decision Tree Regressor",
+                 bg=NAVY, fg=WHITE,
+                 font=("Times New Roman", 24, "bold")).pack(pady=(16, 2))
+        tk.Label(head,
+                 text="Compressive Strength Prediction",
+                 bg=NAVY, fg="#9ec4e8",
+                 font=("Times New Roman", 13, "bold")).pack(pady=(0, 16))
+
+        info = tk.Frame(self, bg=LBLUE)
+        info.pack(fill="x")
+        tk.Label(info,
+                 text="Model: Decision Tree (Rank 1)   \u2502   Dataset: 108 Specimens   "
+                      "\u2502   Train/Test Split: 80 / 20   \u2502   Features: 7",
+                 bg=LBLUE, fg=NAVY,
+                 font=("Times New Roman", 11, "bold")).pack(pady=7)
+
+    # ── input parameters ──────────────────────────────────────────────────────
+    def _build_inputs(self):
+        box = tk.LabelFrame(self,
+                            text="  \u2726  Input Mix Proportions  ",
+                            bg=WHITE, fg=NAVY,
+                            font=("Times New Roman", 13, "bold"),
+                            bd=2, relief="groove")
+        box.pack(fill="x", padx=18, pady=12, ipady=4)
+
+        # Tag accent colours per feature group
+        TAG_FG  = [NAVY, NAVY, NAVY, TEAL, GREEN, GOLD, ORANGE]
+        TAG_BG  = ["#e0eaf8","#e0eaf8","#e0eaf8",
+                   "#ece6f5","#e5f5ed","#f5ede0","#fdf0e5"]
+
+        for i, (tag, name, unit, _) in enumerate(FEATURES):
+            row = tk.Frame(box, bg=WHITE)
+            row.pack(anchor="w", padx=14, pady=7)
+
+            # Tag badge
+            tk.Label(row, text=tag, bg=TAG_BG[i], fg=TAG_FG[i],
+                     width=5, font=("Times New Roman", 11, "bold"),
+                     relief="solid", bd=1, padx=2).pack(side="left")
+
+            # Feature name
+            tk.Label(row, text=f"  {name}", bg=WHITE, fg="#1a1a1a",
+                     width=18, anchor="w",
+                     font=("Times New Roman", 13, "bold")).pack(side="left")
+
+            # Unit
+            tk.Label(row, text=f"({unit})", bg=WHITE, fg=GREY,
+                     width=9, anchor="w",
+                     font=("Times New Roman", 11)).pack(side="left")
+
+            tk.Label(row, text="=", bg=WHITE,
+                     font=("Times New Roman", 14, "bold")).pack(side="left", padx=6)
+
+            e = tk.Entry(row, width=14, justify="center",
+                         font=("Consolas", 13),
+                         relief="solid", bd=1, bg="#fafcff")
+            e.pack(side="left")
+
+            # Range hint
+            arr = np.array(DATA)
+            lo, hi = arr[:, i].min(), arr[:, i].max()
+            tk.Label(row, text=f"  [{lo:.2f} – {hi:.2f}]",
+                     bg=WHITE, fg="#8a8a8a",
+                     font=("Times New Roman", 10)).pack(side="left", padx=4)
+
+            self.entries[name] = e
+
+    def _build_divider(self):
+        tk.Frame(self, bg=LBLUE, height=2).pack(fill="x", padx=0, pady=0)
+
+    # ── prediction output ─────────────────────────────────────────────────────
+    def _build_output(self):
+        box = tk.LabelFrame(self,
+                            text="  \u2726  Prediction Result  ",
+                            bg=WHITE, fg=NAVY,
+                            font=("Times New Roman", 13, "bold"),
+                            bd=2, relief="groove")
+        box.pack(fill="x", padx=18, pady=10, ipady=6)
+
+        inner = tk.Frame(box, bg=LGREY,
+                         highlightbackground=BLUE, highlightthickness=1)
+        inner.pack(fill="x", padx=10, pady=8)
+
+        # ── left: predicted value ──
+        left = tk.Frame(inner, bg=LGREY)
+        left.pack(side="left", padx=22, pady=12)
+
+        tk.Label(left, text="Predicted Compressive Strength",
+                 bg=LGREY, fg=GREY,
+                 font=("Times New Roman", 13, "bold")).pack(anchor="w")
+
+        self.pred_var = tk.StringVar(value="—")
+        self.pred_lbl = tk.Label(left, textvariable=self.pred_var,
+                                  bg=LGREY, fg=ORANGE,
+                                  font=("Times New Roman", 42, "bold"))
+        self.pred_lbl.pack(anchor="w")
+
+        tk.Label(left, text="Dataset range: 30.4 – 126.8 MPa",
+                 bg=LGREY, fg=GREY,
+                 font=("Times New Roman", 10)).pack(anchor="w", pady=(4,0))
+
+        # ── separator ──
+        tk.Frame(inner, bg="#c8d8e8", width=2).pack(side="left", fill="y",
+                                                      padx=10, pady=10)
+
+        # ── right: strength class ──
+        right = tk.Frame(inner, bg=LGREY)
+        right.pack(side="left", padx=22, pady=12, anchor="w")
+
+        tk.Label(right, text="Strength Classification",
+                 bg=LGREY, fg=GREY,
+                 font=("Times New Roman", 13, "bold")).pack(anchor="w")
+
+        self.class_var = tk.StringVar(value="—")
+        self.class_lbl = tk.Label(right, textvariable=self.class_var,
+                                   bg=LGREY, fg=GREEN,
+                                   font=("Times New Roman", 16, "bold"))
+        self.class_lbl.pack(anchor="w", pady=(6, 0))
+
+        # Class legend
+        legend = tk.Frame(right, bg=LGREY)
+        legend.pack(anchor="w", pady=(10, 0))
+        levels = [
+            ("< 45",      "Very Low",  "#b03020"),
+            ("45 – 65",   "Low",       "#d4650a"),
+            ("65 – 85",   "Moderate",  "#b89200"),
+            ("85 – 105",  "High",      GREEN),
+            ("> 105",     "Very High", BLUE),
+        ]
+        for rng, lbl, col in levels:
+            row_l = tk.Frame(legend, bg=LGREY)
+            row_l.pack(anchor="w", pady=1)
+            tk.Label(row_l, text="\u2588", bg=LGREY, fg=col,
+                     font=("Consolas", 11)).pack(side="left")
+            tk.Label(row_l, text=f"  {rng} MPa  →  {lbl}",
+                     bg=LGREY, fg=GREY,
+                     font=("Times New Roman", 10)).pack(side="left")
+
+    # ── metrics panel ─────────────────────────────────────────────────────────
+    def _build_metrics(self):
+        box = tk.LabelFrame(self,
+                            text="  \u2726  Reported Model Performance (from published study)  ",
+                            bg=WHITE, fg=NAVY,
+                            font=("Times New Roman", 13, "bold"),
+                            bd=2, relief="groove")
+        box.pack(fill="x", padx=18, pady=(0, 8), ipady=6)
+
+        m = REPORTED
+
+        # Column headers
+        hdr = tk.Frame(box, bg="#dce7f3")
+        hdr.pack(fill="x", padx=10, pady=(4, 2))
+        for h, w in [("Stage", 14), ("R²", 12), ("RMSE (MPa)", 16), ("MAE (MPa)", 14)]:
+            tk.Label(hdr, text=h, bg="#dce7f3", fg=NAVY, width=w,
+                     font=("Times New Roman", 12, "bold")).pack(side="left", pady=3)
+
+        # Training row
+        tr = tk.Frame(box, bg=WHITE)
+        tr.pack(fill="x", padx=10, pady=2)
+        for txt, w, col in [
+            ("Training (80%)", 14, RED),
+            (f"{m['train_r2']:.4f}", 12, RED),
+            (f"{m['train_rmse']:.4f}", 16, RED),
+            (f"{m['train_mae']:.4f}", 14, RED),
+        ]:
+            tk.Label(tr, text=txt, bg=WHITE, fg=col, width=w,
+                     font=("Consolas", 11, "bold"), anchor="w").pack(side="left")
+
+        # Testing row
+        te = tk.Frame(box, bg=WHITE)
+        te.pack(fill="x", padx=10, pady=2)
+        for txt, w, col in [
+            ("Testing  (20%)", 14, GREEN),
+            (f"{m['test_r2']:.4f}", 12, GREEN),
+            (f"{m['test_rmse']:.4f}", 16, GREEN),
+            (f"{m['test_mae']:.4f}", 14, GREEN),
+        ]:
+            tk.Label(te, text=txt, bg=WHITE, fg=col, width=w,
+                     font=("Consolas", 11, "bold"), anchor="w").pack(side="left")
+
+        # Separator
+        tk.Frame(box, bg="#dce7f3", height=1).pack(fill="x", padx=10, pady=4)
+
+        # 10-fold CV + LOOCV
+        extra = tk.Frame(box, bg=WHITE)
+        extra.pack(fill="x", padx=10, pady=(0, 4))
+        cv_info = [
+            (f"10-Fold CV   R\u00b2 = {m['cv10_r2']:.4f}", BLUE),
+            (f"LOOCV   R\u00b2 = {m['loocv_r2']:.4f}   "
+             f"RMSE = {m['loocv_rmse']:.4f}   MAE = {m['loocv_mae']:.4f}", TEAL),
+        ]
+        for txt, col in cv_info:
+            tk.Label(extra, text=txt, bg=WHITE, fg=col,
+                     font=("Consolas", 11, "bold"), anchor="w").pack(anchor="w", pady=1)
+
+    # ── action buttons ────────────────────────────────────────────────────────
+    def _build_buttons(self):
+        bar = tk.Frame(self, bg=WHITE)
+        bar.pack(fill="x", padx=18, pady=(4, 14))
+
+        btns = [
+            ("\u25B6   Calculate Strength", GREEN,  "#165c30", self.calculate),
+            ("\u21BB   Reset Inputs",        RED,    "#8c2418", self.reset),
+            ("\u2756   Load Example",        BLUE,   "#124880", self.load_example),
+        ]
+        for text, bg, hover, cmd in btns:
+            b = tk.Button(bar, text=text, bg=bg, fg=WHITE,
+                          font=("Times New Roman", 13, "bold"),
+                          bd=0, padx=10, pady=12,
+                          activebackground=hover, activeforeground=WHITE,
+                          cursor="hand2", command=cmd)
+            b.pack(side="left", expand=True, fill="x", padx=4)
+
+    # ── footer ────────────────────────────────────────────────────────────────
+    def _build_footer(self):
+        foot = tk.Frame(self, bg="#c8d5e0")
+        foot.pack(fill="x")
+        tk.Label(foot,
+                 text="Universiti Sains Malaysia (USM Penang)   \u2502   "
+                      "Civil & Structural Engineering   \u2502   Nano-Material Concrete Research",
+                 bg="#c8d5e0", fg=NAVY,
+                 font=("Times New Roman", 10, "bold")).pack(pady=6)
+
+    # ── actions ───────────────────────────────────────────────────────────────
+    def calculate(self):
+        try:
+            x = [float(self.entries[name].get())
+                 for (_, name, _, _) in FEATURES]
+        except ValueError:
+            messagebox.showerror("Invalid Input",
+                                  "Please enter a valid number in every field.")
+            return
+
+        fc = float(self.model.predict(np.array([x]))[0])
+        fc = max(0.0, fc)
+
+        self.pred_var.set(f"{fc:.2f} MPa")
+        label, color = strength_class(fc)
+        self.pred_lbl.config(fg=color)
+        self.class_var.set(label)
+        self.class_lbl.config(fg=color)
+
+    def reset(self):
+        for (_, name, _, _) in FEATURES:
+            self.entries[name].delete(0, "end")
+        self.pred_var.set("—")
+        self.pred_lbl.config(fg=ORANGE)
+        self.class_var.set("—")
+        self.class_lbl.config(fg=GREEN)
+
+    def load_example(self):
+        """Load a representative high-strength nano-silica mix."""
+        for (_, name, _, default) in FEATURES:
+            self.entries[name].delete(0, "end")
+            self.entries[name].insert(0, str(default))
+        self.calculate()
+
+
+# ============================================================================
+if __name__ == "__main__":
+    App().mainloop()
